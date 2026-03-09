@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ley Seca - The Calculator</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-red: #ff003c;
+            --dark-bg: #050505;
+            --glass: rgba(0, 0, 0, 0.7);
+            --border-glow: rgba(255, 0, 60, 0.4);
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+            /* Fondo con imagen representativa del desierto/noche del video */
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1920') no-repeat center center;
+            background-size: cover;
+            position: relative;
+        }
+
+        /* Overlay de ruido/escena para dar textura de videoclip */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .calc-wrapper {
+            position: relative;
+            z-index: 10;
+            padding: 5px;
+            border-radius: 35px;
+            background: linear-gradient(145deg, #111, #000);
+            box-shadow: 0 0 60px rgba(255, 0, 60, 0.3), inset 0 0 20px rgba(0, 242, 255, 0.1);
+        }
+
+        .calculator {
+            width: 380px;
+            background: var(--glass);
+            padding: 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            text-shadow: 0 0 10px var(--neon-red), 0 0 20px var(--neon-red);
+            font-weight: 900;
+        }
+
+        .header p {
+            font-size: 10px;
+            color: var(--neon-blue);
+            margin: 8px 0;
+            letter-spacing: 3px;
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        /* Pantalla con efecto CRT */
+        .screen-container {
+            background: #000;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--neon-red);
+            border-right: 4px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen-container::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #display {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 42px;
+            text-align: right;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* Grid de botones */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .btn {
+            height: 65px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: rgba(255, 0, 60, 0.2);
+            border-color: var(--neon-red);
+            box-shadow: 0 0 15px var(--neon-red);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-label {
+            font-size: 8px;
+            color: var(--neon-blue);
+            margin-top: 5px;
+            letter-spacing: 1px;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+
+        .btn.op {
+            color: var(--neon-red);
+            font-weight: 900;
+            background: rgba(255, 0, 60, 0.05);
+        }
+
+        .btn.special {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--neon-blue);
+        }
+
+        .btn.equal {
+            grid-column: span 2;
+            background: linear-gradient(135deg, var(--neon-red), #80001e);
+            color: white;
+            font-weight: 900;
+            border: none;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .btn.equal:hover {
+            box-shadow: 0 0 30px var(--neon-red);
+            filter: brightness(1.2);
+        }
+
+        /* Decoración de fondo de botones con mini escenas */
+        .btn.scene-1 { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=60&w=200'); background-size: cover; }
+        .btn.scene-2 { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1514525253344-a812ef9ee586?auto=format&fit=crop&q=60&w=200'); background-size: cover; }
+
+        .flicker {
+            animation: text-flicker 2s linear infinite;
+        }
+
+        @keyframes text-flicker {
+            0% { opacity: 0.1; }
+            2% { opacity: 1; }
+            8% { opacity: 0.1; }
+            9% { opacity: 1; }
+            12% { opacity: 0.1; }
+            20% { opacity: 1; }
+            25% { opacity: 0.3; }
+            30% { opacity: 1; }
+            70% { opacity: 0.7; }
+            72% { opacity: 0.2; }
+            77% { opacity: 0.9; }
+            100% { opacity: 1; }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        /* Mensaje de error personalizado */
+        .error-msg {
+            color: var(--neon-red) !important;
+            font-size: 24px !important;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="calc-wrapper">
+        <div class="calculator">
+            <div class="header">
+                <h1 class="flicker">LEY SECA</h1>
+                <p>ANUEL AA <span style="color:white">x</span> JHAYCO</p>
+            </div>
+
+            <div class="screen-container">
+                <input type="text" id="display" readonly placeholder="REAL HASTA LA MUERTE">
+            </div>
+
+            <div class="grid">
+                <!-- Fila 1 -->
+                <button class="btn special" onclick="clearDisplay()">AC<span class="btn-label">Limpiar</span></button>
+                <button class="btn op" onclick="deleteLast()">DEL<span class="btn-label">Borrar</span></button>
+                <button class="btn op" onclick="append('/')">÷<span class="btn-label">Divide</span></button>
+                <button class="btn op" onclick="append('*')">×<span class="btn-label">Multiplica</span></button>
+
+                <!-- Fila 2 -->
+                <button class="btn scene-1" onclick="append('7')">7<span class="btn-label">La Presión</span></button>
+                <button class="btn" onclick="append('8')">8<span class="btn-label">Real G</span></button>
+                <button class="btn scene-2" onclick="append('9')">9<span class="btn-label">Intocable</span></button>
+                <button class="btn op" onclick="append('-')">-<span class="btn-label">Resta</span></button>
+
+                <!-- Fila 3 -->
+                <button class="btn" onclick="append('4')">4<span class="btn-label">Brrr</span></button>
+                <button class="btn scene-1" onclick="append('5')">5<span class="btn-label">Time Check</span></button>
+                <button class="btn" onclick="append('6')">6<span class="btn-label">Hielo</span></button>
+                <button class="btn op" onclick="append('+')">+<span class="btn-label">Suma</span></button>
+
+                <!-- Fila 4 -->
+                <button class="btn scene-2" onclick="append('1')">1<span class="btn-label">El Dios</span></button>
+                <button class="btn" onclick="append('2')">2<span class="btn-label">Bebecita</span></button>
+                <button class="btn scene-1" onclick="append('3')">3<span class="btn-label">VIP</span></button>
+                <button class="btn" onclick="append('.')">.<span class="btn-label">Punto</span></button>
+
+                <!-- Fila 5 -->
+                <button class="btn" style="grid-column: span 2;" onclick="append('0')">0<span class="btn-label">Sin Sentimientos</span></button>
+                <button class="btn equal" onclick="calculate()">TOTAL: SE ROMPIÓ LA LEY 🥂</button>
+            </div>
+
+            <div class="footer">
+                ¿DÓNDE ESTÁN LAS GANAS?
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+
+        function append(value) {
+            if (display.classList.contains('error-msg')) {
+                display.classList.remove('error-msg');
+                display.value = '';
+            }
+            if (display.value === 'Error') display.value = '';
+            display.value += value;
+        }
+
+        function clearDisplay() {
+            display.value = '';
+            display.classList.remove('error-msg');
+        }
+
+        function deleteLast() {
+            display.value = display.value.slice(0, -1);
+        }
+
+        function calculate() {
+            try {
+                // Sanitización básica para evitar errores de sintaxis en eval
+                let expression = display.value.replace(/[^-+/*0-9.]/g, '');
+                if (!expression) return;
+                
+                const result = eval(expression);
+                
+                if (result === Infinity || isNaN(result)) {
+                    display.value = 'ERROR';
+                    display.classList.add('error-msg');
+                } else {
+                    display.value = Number.isInteger(result) ? result : result.toFixed(2);
+                }
+            } catch (e) {
+                display.value = 'ERROR';
+                display.classList.add('error-msg');
+            }
+        }
+
+        // Soporte para teclado físico
+        document.addEventListener('keydown', (e) => {
+            if (/[0-9]/.test(e.key)) append(e.key);
+            if (['+', '-', '*', '/'].includes(e.key)) append(e.key);
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calculate();
+            }
+            if (e.key === 'Backspace') deleteLast();
+            if (e.key === 'Escape') clearDisplay();
+        });
+    </script>
+</body>
+</html>
