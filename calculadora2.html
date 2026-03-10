@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ojitos Lindos - Pink Sunset</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@300;600&display=swap');
+
+        :root {
+            /* Paleta Rosa Protagonista */
+            --vivid-pink: #ff0080;
+            --soft-pink: #ff85a2;
+            --deep-magenta: #c71585;
+            --sunset-purple: #2d004d; /* Morado muy oscuro para que el rosa resalte */
+            --warm-orange: #ff4500; /* Naranja como acento secundario */
+            --golden-glow: #ffcc33;
+            --glass: rgba(255, 255, 255, 0.12);
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            /* Degradado con protagonismo de ROSA */
+            background: linear-gradient(180deg, 
+                var(--sunset-purple) 0%, 
+                var(--deep-magenta) 25%, 
+                var(--vivid-pink) 55%, 
+                var(--soft-pink) 85%,
+                var(--warm-orange) 100%);
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Resplandor Rosa */
+        .sunset-glow {
+            position: fixed;
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle, var(--vivid-pink) 0%, transparent 70%);
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.5;
+            z-index: -1;
+            filter: blur(80px);
+        }
+
+        .beach-element {
+            position: fixed;
+            font-size: 3.5rem;
+            z-index: -1;
+            opacity: 0.25;
+            filter: drop-shadow(0 0 10px var(--soft-pink));
+        }
+
+        .calculator-card {
+            width: 100%;
+            max-width: 450px;
+            background: rgba(45, 0, 77, 0.3);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 133, 162, 0.4);
+            border-radius: 50px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            padding: 45px 20px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Caveat', cursive;
+            font-size: 4rem;
+            margin: 0;
+            color: white;
+            text-shadow: 0 0 20px var(--vivid-pink);
+        }
+
+        .header p {
+            font-size: 0.75rem;
+            margin-top: 5px;
+            color: var(--soft-pink);
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-btn {
+            padding: 12px 18px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 133, 162, 0.6);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.4s;
+            border-radius: 25px;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: var(--vivid-pink);
+            box-shadow: 0 5px 20px rgba(255, 0, 128, 0.4);
+        }
+
+        .content {
+            padding: 35px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeInSlide 0.7s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: var(--soft-pink);
+            font-weight: 600;
+            letter-spacing: 1.5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 133, 162, 0.25);
+            border-radius: 20px;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--vivid-pink);
+            box-shadow: 0 0 15px rgba(255, 0, 128, 0.2);
+        }
+
+        .calc-btn {
+            width: 100%;
+            padding: 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--deep-magenta), var(--vivid-pink));
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.4s;
+            box-shadow: 0 10px 25px rgba(199, 21, 133, 0.3);
+        }
+
+        .calc-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.15);
+            box-shadow: 0 15px 35px rgba(255, 0, 128, 0.5);
+        }
+
+        .result-display {
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(255, 0, 128, 0.1);
+            border-radius: 30px;
+            text-align: center;
+            border: 1px dashed var(--soft-pink);
+        }
+
+        .res-value {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: white;
+            font-family: 'Caveat', cursive;
+            text-shadow: 0 0 20px var(--vivid-pink);
+        }
+
+        .lyrics-quote {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        .lyrics-quote b {
+            color: white;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1rem;
+            text-shadow: 0 0 5px var(--vivid-pink);
+        }
+
+        .temp-res-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .temp-item {
+            text-align: center;
+        }
+
+        .temp-item small { display: block; font-size: 0.6rem; color: var(--soft-pink); text-transform: uppercase; margin-bottom: 4px; }
+        .temp-item span { font-weight: bold; color: white; font-size: 1.4rem; }
+
+    </style>
+</head>
+<body>
+
+<div class="sunset-glow"></div>
+<div class="beach-element" style="top: 12%; right: 10%;">💖</div>
+<div class="beach-element" style="bottom: 18%; left: 8%;">🌊</div>
+
+<div class="calculator-card">
+    <div class="header">
+        <h1>Ojitos Lindos</h1>
+        <p>Caribbean Pink Sunset</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'temp')">Fuego</button>
+        <button class="tab-btn" onclick="openTab(event, 'bmi')">Energía</button>
+        <button class="tab-btn" onclick="openTab(event, 'cal')">Dulzura</button>
+    </div>
+
+    <div class="content">
+        <!-- SECCIÓN TEMPERATURA -->
+        <div id="temp" class="section active">
+            <div class="input-group">
+                <label>¿A cuánto arde el cielo rosa?</label>
+                <input type="number" id="tempVal" placeholder="Grados..." oninput="calcTemp()">
+            </div>
+            <div class="input-group">
+                <label>Escala</label>
+                <select id="tempUnit" onchange="calcTemp()">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F">Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                </select>
+            </div>
+            <div class="result-display">
+                <div style="font-size: 0.65rem; color: white; letter-spacing: 3px; margin-bottom: 12px; font-weight: bold; opacity: 0.8;">ATMÓSFERA ROMÁNTICA</div>
+                <div class="temp-res-container">
+                    <div class="temp-item"><small>Fahrenheit</small><span id="outF">--</span></div>
+                    <div class="temp-item"><small>Kelvin</small><span id="outK">--</span></div>
+                </div>
+            </div>
+            <p class="lyrics-quote">
+                <b>"Me gusta tu cara y tu pelo..."</b>
+                Bajo este brillo rosa pastel.
+            </p>
+        </div>
+
+        <!-- SECCIÓN IMC -->
+        <div id="bmi" class="section">
+            <div class="input-group">
+                <label>Tu peso (kg)</label>
+                <input type="number" id="weight" placeholder="Peso...">
+            </div>
+            <div class="input-group">
+                <label>Tu estatura (cm)</label>
+                <input type="number" id="height" placeholder="cm">
+            </div>
+            <button class="calc-btn" onclick="calcBMI()">Mírame con tus ojitos</button>
+            
+            <div class="result-display" id="bmiDisplay" style="display: none;">
+                <div style="font-size: 0.65rem; color: white; font-weight: bold; opacity: 0.7;">VIBRA TOTAL</div>
+                <div class="res-value" id="bmiVal">--</div>
+                <div id="bmiCategory" style="color: var(--soft-pink); font-weight: 600;">--</div>
+            </div>
+            <p class="lyrics-quote">
+                <b>"Y solo mírame con esos ojitos lindos..."</b>
+                Que con eso yo me siento bien.
+            </p>
+        </div>
+
+        <!-- SECCIÓN CALORÍAS -->
+        <div id="cal" class="section">
+            <div class="input-group">
+                <label>Dulces caribeños</label>
+                <select id="food">
+                    <option value="250">Piña Colada (vaso)</option>
+                    <option value="120">Sorbet de Frambuesa</option>
+                    <option value="300">Bizcocho de Guayaba</option>
+                    <option value="80">Fruta del Dragón (100g)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>¿Cuántas rondas?</label>
+                <input type="number" id="grams" placeholder="Cantidad...">
+            </div>
+            <button class="calc-btn" onclick="calcCal()">Calcular Energía</button>
+            
+            <div class="result-display" id="calDisplay" style="display: none;">
+                <div style="font-size: 0.65rem; color: white; font-weight: bold; opacity: 0.7;">KCALS ACUMULADAS</div>
+                <div class="res-value" id="calTotal">--</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">Para seguir amándote</div>
+            </div>
+            <p class="lyrics-quote">
+                <b>"Yo no buscaba a nadie y te vi..."</b>
+                El postre sabe mejor contigo.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        let i, section, tablinks;
+        section = document.getElementsByClassName("section");
+        for (i = 0; i < section.length; i++) {
+            section[i].classList.remove("active");
+        }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function calcTemp() {
+        const val = parseFloat(document.getElementById('tempVal').value);
+        const unit = document.getElementById('tempUnit').value;
+        const outF = document.getElementById('outF');
+        const outK = document.getElementById('outK');
+
+        if (isNaN(val)) {
+            outF.innerText = "--"; outK.innerText = "--";
+            return;
+        }
+
+        let c, f, k;
+        if (unit === 'C') {
+            c = val; f = (c * 9/5) + 32; k = c + 273.15;
+            outF.innerText = f.toFixed(1) + "°F";
+            outK.innerText = k.toFixed(1) + "K";
+        } else if (unit === 'F') {
+            f = val; c = (f - 32) * 5/9; k = c + 273.15;
+            outF.innerText = c.toFixed(1) + "°C";
+            outK.innerText = k.toFixed(1) + "K";
+        } else {
+            k = val; c = k - 273.15; f = (c * 9/5) + 32;
+            outF.innerText = c.toFixed(1) + "°C";
+            outK.innerText = f.toFixed(1) + "°F";
+        }
+    }
+
+    function calcBMI() {
+        const w = parseFloat(document.getElementById('weight').value);
+        const h = parseFloat(document.getElementById('height').value) / 100;
+        const display = document.getElementById('bmiDisplay');
+        const valText = document.getElementById('bmiVal');
+        const catText = document.getElementById('bmiCategory');
+
+        if (!w || !h) return;
+        const bmi = w / (h * h);
+        valText.innerText = bmi.toFixed(1);
+        display.style.display = 'block';
+
+        if (bmi < 18.5) catText.innerText = "Más mimos y comida, baby";
+        else if (bmi < 24.9) catText.innerText = "Nivel: Perfección";
+        else if (bmi < 29.9) catText.innerText = "Vámonos a nadar";
+        else catText.innerText = "Cuida esa sonrisa";
+    }
+
+    function calcCal() {
+        const kcalBase = parseFloat(document.getElementById('food').value);
+        const qty = parseFloat(document.getElementById('grams').value);
+        const display = document.getElementById('calDisplay');
+        const totalText = document.getElementById('calTotal');
+
+        if (!qty) return;
+        const total = kcalBase * qty;
+        totalText.innerText = total.toFixed(0) + " KCAL";
+        display.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
