@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Emojis Interactiva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Transiciones suaves y estilos personalizados */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Animación flotante para el confeti */
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) rotate(0deg) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) rotate(360deg) scale(1.5);
+                opacity: 0;
+            }
+        }
+        .confetti {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 2.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans flex flex-col justify-between smooth-transition overflow-x-hidden relative">
+
+    <!-- Contenedor dinámico para efectos de confeti -->
+    <div id="particle-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+    <!-- Contenedor Principal -->
+    <main class="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center max-w-4xl">
+        
+        <!-- Cabecera -->
+        <header class="w-full text-center mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs font-bold tracking-widest text-indigo-600 dark:text-indigo-400 uppercase">Interactive Lab</span>
+                <!-- Botón de Cambio de Tema -->
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 smooth-transition focus:outline-none" title="Cambiar tema">
+                    <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <svg id="theme-icon-dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+                Tabla de Emojis Interactiva
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm md:text-base max-w-lg mx-auto">
+                Haz clic en los botones de la tabla para activar melodías sintetizadas, estadísticas en tiempo real y efectos visuales.
+            </p>
+        </header>
+
+        <!-- Cuadrícula de Contenido: Tabla + Panel de Información -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- Lado de la Tabla (6 Botones en formato 2 x 3) -->
+            <div class="md:col-span-7 bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col justify-center">
+                <h2 class="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center md:text-left">
+                    Matriz de Botones (2 x 3)
+                </h2>
+                
+                <!-- Contenedor de Tabla Adaptable -->
+                <div class="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700/50">
+                                <th class="p-3 text-center w-1/3">Columna A</th>
+                                <th class="p-3 text-center w-1/3">Columna B</th>
+                                <th class="p-3 text-center w-1/3">Columna C</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            <!-- Fila 1 -->
+                            <tr class="bg-transparent">
+                                <td class="p-3 text-center border-r border-slate-100 dark:border-slate-700/30">
+                                    <button onclick="activateEmoji(0)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-900/30 dark:hover:bg-indigo-950/40 border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">🚀</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 1</span>
+                                    </button>
+                                </td>
+                                <td class="p-3 text-center border-r border-slate-100 dark:border-slate-700/30">
+                                    <button onclick="activateEmoji(1)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-purple-50 dark:bg-slate-900/30 dark:hover:bg-purple-950/40 border border-transparent hover:border-purple-200 dark:hover:border-purple-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">🎨</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 2</span>
+                                    </button>
+                                </td>
+                                <td class="p-3 text-center">
+                                    <button onclick="activateEmoji(2)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-amber-50 dark:bg-slate-900/30 dark:hover:bg-amber-950/40 border border-transparent hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">💡</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 3</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Fila 2 -->
+                            <tr class="bg-transparent">
+                                <td class="p-3 text-center border-r border-slate-100 dark:border-slate-700/30">
+                                    <button onclick="activateEmoji(3)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-rose-50 dark:bg-slate-900/30 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">🔥</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 4</span>
+                                    </button>
+                                </td>
+                                <td class="p-3 text-center border-r border-slate-100 dark:border-slate-700/30">
+                                    <button onclick="activateEmoji(4)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-slate-900/30 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">🎮</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 5</span>
+                                    </button>
+                                </td>
+                                <td class="p-3 text-center">
+                                    <button onclick="activateEmoji(5)" class="emoji-btn group flex flex-col items-center justify-center p-4 w-full h-24 rounded-xl bg-slate-50 hover:bg-pink-50 dark:bg-slate-900/30 dark:hover:bg-pink-950/40 border border-transparent hover:border-pink-200 dark:hover:border-pink-800 transition-all duration-200 active:scale-95">
+                                        <span class="text-3xl group-hover:scale-125 transition-transform duration-200 ease-out">🎉</span>
+                                        <span class="text-2xs text-slate-400 mt-1.5 font-medium">Botón 6</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Panel de Información Lateral -->
+            <div class="md:col-span-5 flex flex-col justify-between bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-700">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">
+                        Detalles del Elemento
+                    </h2>
+                    
+                    <!-- Tarjeta de Detalles Dinámicos -->
+                    <div id="details-card" class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 flex flex-col items-center text-center smooth-transition min-h-[220px] justify-center">
+                        <span id="active-emoji" class="text-6xl mb-3 animate-bounce">👋</span>
+                        <h3 id="active-title" class="text-xl font-bold mb-1">¡Hola, explorador!</h3>
+                        <p id="active-category" class="text-xs font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-3">Primeros Pasos</p>
+                        <p id="active-desc" class="text-sm text-slate-500 dark:text-slate-400 px-4">
+                            Presiona cualquiera de los 6 botones de la tabla de la izquierda para ver su significado, escuchar su tono armónico y registrar interacciones.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Estadísticas Globales -->
+                <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-2 gap-4">
+                    <div class="bg-indigo-50/50 dark:bg-indigo-950/20 p-3 rounded-xl border border-indigo-100/50 dark:border-indigo-950/50 text-center">
+                        <span class="text-2xs uppercase tracking-wider font-semibold text-slate-400 dark:text-indigo-400">Total de Clics</span>
+                        <p id="total-clicks" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-300 mt-0.5">0</p>
+                    </div>
+                    <div class="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100/50 dark:border-emerald-950/50 text-center">
+                        <span class="text-2xs uppercase tracking-wider font-semibold text-slate-400 dark:text-emerald-400">Clics del Activo</span>
+                        <p id="active-clicks" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-300 mt-0.5">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="w-full text-center py-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
+        <p>Hecho con ❤️ y Tailwind CSS • Tabla de 6 Botones con Audio Integrado</p>
+    </footer>
+
+    <script>
+        // Datos de catálogo de los 6 emojis
+        const emojisData = [
+            {
+                emoji: "🚀",
+                title: "Cohete espacial",
+                category: "Lanzamiento / Éxito",
+                desc: "Simboliza despegue rápido, ambición, nuevos proyectos, alta velocidad y un futuro brillante sin límites.",
+                frequency: 261.63, // Nota Do (C4)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-36-18-mateo-engaging-warm-and-emotive-pvc-sp-112-s-45-sb-75-se-20-b-m-2/ElevenLabs_2026-06-10T08_36_18_Mateo%20-%20Engaging%2C%20Warm%20and%20Emotive_pvc_sp112_s45_sb75_se20_b_m2.mp3", // URL del audio remoto
+                clicks: 0
+            },
+            {
+                emoji: "🎨",
+                title: "Paleta de artista",
+                category: "Creatividad / Diseño",
+                desc: "Representa el arte, la creación de nuevos conceptos, el diseño gráfico, la expresión personal y la diversidad de ideas.",
+                frequency: 293.66, // Nota Re (D4)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-38-34-mateo-engaging-warm-and-emotive-pvc-sp-112-s-45-sb-75-se-20-b-m-2/ElevenLabs_2026-06-10T08_38_34_Mateo%20-%20Engaging%2C%20Warm%20and%20Emotive_pvc_sp112_s45_sb75_se20_b_m2.mp3",
+                clicks: 0
+            },
+            {
+                emoji: "💡",
+                title: "Bombilla eléctrica",
+                category: "Idea / Innovación",
+                desc: "Asociado instantáneamente con nuevas ideas, momentos de revelación intelectual, descubrimiento, electricidad y genialidad.",
+                frequency: 329.63, // Nota Mi (E4)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-46-58-mateo-engaging-warm-and-emotive-pvc-sp-112-s-45-sb-75-se-20-b-m-2/ElevenLabs_2026-06-10T08_46_58_Mateo%20-%20Engaging%2C%20Warm%20and%20Emotive_pvc_sp112_s45_sb75_se20_b_m2.mp3",
+                clicks: 0
+            },
+            {
+                emoji: "🔥",
+                title: "Fuego brillante",
+                category: "Tendencia / Pasión",
+                desc: "Representa pasión, intensidad, temas populares o virales, calor acogedor, energía inagotable y dinamismo.",
+                frequency: 392.00, // Nota Sol (G4)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-54-27-mateo-engaging-warm-and-emotive-pvc-sp-75-s-82-sb-75-se-66-b-m-2/ElevenLabs_2026-06-10T08_54_27_Mateo%20-%20Engaging%2C%20Warm%20and%20Emotive_pvc_sp75_s82_sb75_se66_b_m2.mp3",
+                clicks: 0
+            },
+            {
+                emoji: "🎮",
+                title: "Mando de juego",
+                category: "Diversión / Videojuegos",
+                desc: "Representa entretenimiento interactivo, mentalidad gamer, relajación, retos lúdicos y diversión compartida entre amigos.",
+                frequency: 440.00, // Nota La (A4)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-57-42-mateo-engaging-warm-and-emotive-pvc-sp-75-s-82-sb-75-se-66-b-m-2/ElevenLabs_2026-06-10T08_57_42_Mateo%20-%20Engaging%2C%20Warm%20and%20Emotive_pvc_sp75_s82_sb75_se66_b_m2.mp3",
+                clicks: 0
+            },
+            {
+                emoji: "🎉",
+                title: "Cañón de confeti",
+                category: "Celebración / Fiesta",
+                desc: "Ideal para conmemorar hitos importantes, celebrar éxitos compartidos, desear un feliz cumpleaños o dar la bienvenida.",
+                frequency: 523.25, // Nota Do (C5)
+                audioUrl: "https://archive.org/download/eleven-labs-2026-06-10-t-08-59-18-brian-c-clean-professional-warm-pvc-sp-100-s-50-sb-75-se-0-b-m-2/ElevenLabs_2026-06-10T08_59_18_Brian%20C%20-%20Clean%2C%20professional%2C%20warm_pvc_sp100_s50_sb75_se0_b_m2.mp3",
+                clicks: 0
+            }
+        ];
+
+        let globalClickCount = 0;
+
+        // Configuración de Web Audio API para sintetizador
+        let audioCtx = null;
+
+        function playSynthTone(frequency) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = 'sine';
+                oscillator.frequency.value = frequency;
+
+                const now = audioCtx.currentTime;
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05); // Ataque suave
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.6); // Caída
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.6);
+
+            } catch (err) {
+                console.warn("La API Web Audio no pudo inicializarse: ", err);
+            }
+        }
+
+        // Función para reproducir el audio adecuado (MP3 o Sintetizador)
+        function playSound(data) {
+            if (data.audioUrl) {
+                try {
+                    const audio = new Audio(data.audioUrl);
+                    audio.play().catch(err => {
+                        console.warn("No se pudo reproducir el archivo de audio subido, usando sonido sintético de respaldo:", err);
+                        playSynthTone(data.frequency);
+                    });
+                } catch (e) {
+                    console.warn("Error cargando el objeto de audio, usando respaldo:", e);
+                    playSynthTone(data.frequency);
+                }
+            } else {
+                playSynthTone(data.frequency);
+            }
+        }
+
+        // Lanzador de confeti de partículas (emojis flotantes)
+        function triggerConfetti(emoji) {
+            const container = document.getElementById('particle-container');
+            const count = 12; // Cantidad de partículas óptima para rendimiento
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'confetti text-2xl';
+                particle.textContent = emoji;
+
+                const randomX = Math.random() * 100; // Porcentaje de ancho de pantalla
+                const randomDelay = Math.random() * 0.4; // Segundos de retraso aleatorio
+                const randomSize = 0.8 + Math.random() * 1.2; // Escala aleatoria
+
+                particle.style.left = `${randomX}vw`;
+                particle.style.bottom = `-50px`;
+                particle.style.fontSize = `${randomSize}rem`;
+                particle.style.animationDelay = `${randomDelay}s`;
+                
+                container.appendChild(particle);
+
+                // Eliminación automática para mantener el DOM limpio
+                setTimeout(() => {
+                    particle.remove();
+                }, 3000);
+            }
+        }
+
+        // Activación de evento al pulsar sobre un botón de la tabla
+        function activateEmoji(index) {
+            const data = emojisData[index];
+            if (!data) return;
+
+            globalClickCount++;
+            data.clicks++;
+
+            playSound(data);
+            triggerConfetti(data.emoji);
+
+            document.getElementById('total-clicks').textContent = globalClickCount;
+            document.getElementById('active-clicks').textContent = data.clicks;
+
+            const detailsCard = document.getElementById('details-card');
+            
+            // Efecto sutil de pulsación en el panel de detalles
+            detailsCard.classList.remove('scale-100');
+            detailsCard.classList.add('scale-95', 'opacity-80');
+
+            setTimeout(() => {
+                document.getElementById('active-emoji').textContent = data.emoji;
+                document.getElementById('active-title').textContent = data.title;
+                document.getElementById('active-category').textContent = data.category;
+                document.getElementById('active-desc').textContent = data.desc;
+
+                detailsCard.classList.remove('scale-95', 'opacity-80');
+                detailsCard.classList.add('scale-100');
+            }, 100);
+        }
+
+        // Control de alternancia de tema (Claro/Oscuro)
+        function toggleTheme() {
+            const html = document.documentElement;
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                lightIcon.classList.add('hidden');
+                darkIcon.classList.remove('hidden');
+            } else {
+                html.classList.add('dark');
+                lightIcon.classList.remove('hidden');
+                darkIcon.classList.add('hidden');
+            }
+        }
+
+        // Adaptación automática al tema por defecto del sistema operativo
+        window.addEventListener('load', () => {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                toggleTheme();
+            }
+        });
+    </script>
+</body>
+</html>
