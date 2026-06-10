@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajedrez: Humano vs IA</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #3e2723; color: white; min-height: 100vh; margin: 0; padding: 20px; }
+        
+        #board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 8px solid #5d4037; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .cell { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; font-size: 40px; cursor: pointer; }
+        
+        .white-cell { background-color: #f5f5dc; }
+        .black-cell { background-color: #8b4513; }
+        .selected { background-color: #f1c40f !important; }
+        
+        /* Fichas: Azul (Jugador) vs Rojo (IA) */
+        .piece-w { color: #1e88e5; text-shadow: 1px 1px 2px #000; } 
+        .piece-b { color: #e53935; text-shadow: 1px 1px 2px #000; }
+        
+        #status-msg { margin: 10px; height: 30px; font-weight: bold; color: #ffeb3b; }
+        #game-controls, #difficulty-menu { margin-top: 15px; display: none; }
+        
+        #game-over { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #f5f5dc; border: none; border-radius: 5px; color: #8b4513; font-weight: bold; margin: 5px; transition: 0.2s; }
+        button:hover { background: #fff; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+    <h1>Ajedrez: Humano vs IA</h1>
+
+    <div id="setup">
+        <p>Elige el tiempo de partida:</p>
+        <button onclick="setTime(true)">10 minutos</button>
+        <button onclick="setTime(false)">Sin tiempo</button>
+    </div>
+
+    <div id="difficulty-menu">
+        <p>Elige el nivel de la IA:</p>
+        <button onclick="setDifficulty('easy')">Fácil (Aleatorio)</button>
+        <button onclick="setDifficulty('medium')">Medio (Cálculo simple)</button>
+        <button onclick="setDifficulty('hard')">Difícil (Avanzado)</button>
+    </div>
+
+    <div id="status-msg"></div>
+    <div id="timer-display" style="display:none; font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #ffeb3b;"></div>
+    <div id="board"></div>
+
+    <div id="game-controls">
+        <button onclick="togglePause()" id="pause-btn">Pausar</button>
+        <button onclick="surrender()">Rendirse</button>
+    </div>
+
+    <div id="game-over">
+        <h1 style="font-size: 48px;">Partida finalizada</h1>
+        <p id="winner-text" style="font-size: 24px;"></p>
+        <button onclick="location.reload()">Volver al menú</button>
+    </div>
+
+    <script>
+        const game = new Chess();
+        const boardElement = document.getElementById('board');
+        const statusMsg = document.getElementById('status-msg');
+        const timerDisplay = document.getElementById('timer-display');
+        
+        let selectedSquare = null;
+        let isPaused = false;
+        let timerInterval = null;
+        let timeLeft = 600; 
+        let isTimerEnabled = false;
+        let aiDifficulty = 'easy';
+
+        const pieceMap = { 'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚' };
+
+        function setTime(withTime) {
+            isTimerEnabled = withTime;
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('difficulty-menu').style.display = 'block';
+        }
+
+        function setDifficulty(level) {
+            aiDifficulty = level;
+            document.getElementById('difficulty-menu').style.display = 'none';
+            document.getElementById('game-controls').style.display = 'block';
+            startGame();
+        }
+
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            const boardState = game.board();
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    const square = String.fromCharCode(97 + c) + (8 - r);
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(r+c)%2===0 ? 'white-cell' : 'black-cell'}`;
+                    if(selectedSquare === square) cell.classList.add('selected');
+                    
+                    const piece = boardState[r][c];
+                    if(piece) {
+                        cell.textContent = pieceMap[piece.type];
+                        cell.classList.add(piece.color === 'w' ? 'piece-w' : 'piece-b');
+                    }
+                    
+                    cell.onclick = () => handleSquareClick(square);
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function handleSquareClick(square) {
+            if (isPaused || game.turn() !== 'w') return;
+
+            if(!selectedSquare) {
+                const piece = game.get(square);
+                if (piece && piece.color === 'w') selectedSquare = square;
+            } else {
+                const move = game.move({ from: selectedSquare, to: square, promotion: 'q' });
+                if(move) {
+                    statusMsg.textContent = "";
+                    renderBoard();
+                    if (!game.game_over()) {
+                        setTimeout(makeAIMove, 1000); 
+                    } else {
+                        endGame('j.1');
+                    }
+                } else {
+                    statusMsg.textContent = "Esa pieza no va ahí, prueba otra vez";
+                }
+                selectedSquare = null;
+            }
+            renderBoard();
+        }
+
+        function makeAIMove() {
+            if (isPaused || game.game_over()) return;
+            const moves = game.moves();
+            if(moves.length === 0) return;
+
+            let move;
+            if (aiDifficulty === 'easy') {
+                move = moves[Math.floor(Math.random() * moves.length)];
+            } else if (aiDifficulty === 'medium') {
+                // 30% chance to blunder
+                if (Math.random() < 0.3) {
+                    move = moves[Math.floor(Math.random() * moves.length)];
+                } else {
+                    move = getBestMove(1);
+                }
+            } else { // Hard
+                move = getBestMove(2);
+            }
+            
+            game.move(move);
+            renderBoard();
+            if (game.game_over()) endGame('Gemini');
+        }
+
+        function getBestMove(depth) {
+            const moves = game.moves();
+            let bestMove = moves[0];
+            let bestValue = -9999;
+
+            for (let move of moves) {
+                game.move(move);
+                let boardValue = -evaluateBoard();
+                game.undo();
+                if (boardValue > bestValue) {
+                    bestValue = boardValue;
+                    bestMove = move;
+                }
+            }
+            return bestMove;
+        }
+
+        function evaluateBoard() {
+            let total = 0;
+            const values = { 'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900 };
+            const board = game.board();
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 8; j++) {
+                    const piece = board[i][j];
+                    if (piece) {
+                        let value = values[piece.type];
+                        total += (piece.color === 'b') ? value : -value;
+                    }
+                }
+            }
+            return total;
+        }
+
+        function startGame() {
+            if(isTimerEnabled) {
+                timerDisplay.style.display = 'block';
+                updateTimerDisplay();
+                timerInterval = setInterval(() => {
+                    if(!isPaused && !game.game_over()) {
+                        if(timeLeft > 0) {
+                            timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            endGame('Gemini');
+                        }
+                    }
+                }, 1000);
+            }
+            renderBoard();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-btn').textContent = isPaused ? "Reanudar" : "Pausar";
+            statusMsg.textContent = isPaused ? "Juego pausado" : "";
+        }
+
+        function surrender() { endGame('Gemini'); }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerDisplay.textContent = `Tiempo restante: ${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function endGame(winnerName) {
+            clearInterval(timerInterval);
+            const overlay = document.getElementById('game-over');
+            const text = document.getElementById('winner-text');
+            overlay.style.display = 'flex';
+            text.textContent = (winnerName === 'Gemini') ? "El ganador es Gemini, felicidades" : "El ganador es el j.1, felicidades";
+        }
+    </script>
+</body>
+</html>
