@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goku Retro Runner - Premium Edition</title>
+    <!-- Tailwind CSS para el diseño de la interfaz de usuario -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Retro Pixel de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background-color: #0b0914;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        .retro-border {
+            border: 4px solid #f08000;
+            box-shadow: 0 0 20px rgba(240, 128, 0, 0.4), inset 0 0 10px rgba(240, 128, 0, 0.2);
+        }
+        .btn-retro {
+            text-shadow: 2px 2px 0px #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s ease;
+        }
+        .btn-retro:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+
+    <div class="relative w-full max-w-[800px] flex flex-col items-center">
+        
+        <!-- Cabecera de la UI -->
+        <div class="w-full flex justify-between items-center mb-3 px-2 text-xs md:text-sm">
+            <div class="text-orange-500 tracking-wider">MAX RUNNER 2D</div>
+            <!-- Botón de Silencio -->
+            <button id="muteBtn" class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded border-2 border-gray-600 transition-colors text-[9px] sm:text-xs" onclick="toggleMute()">
+                🔊 SONIDO
+            </button>
+        </div>
+
+        <!-- Área de Juego (Canvas + Menús en Absoluto) -->
+        <div class="relative w-full retro-border bg-black rounded-lg overflow-hidden">
+            
+            <!-- Marcadores de Puntuación -->
+            <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none text-white text-[10px] sm:text-xs">
+                <!-- Lado Izquierdo: Perfil de Emilio y Vidas -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-2 bg-black/75 border-2 border-orange-500 p-1.5 rounded-md pointer-events-auto shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                        <!-- Recuadro de la imagen de usuario -->
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 border border-yellow-400 rounded bg-orange-600/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            <!-- Imagen de usuario personalizada con fallback de carga -->
+                            <img src="https://i.postimg.cc/SKtLypTx/1781105842151.jpg" alt="Avatar Emilio" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/40x40/e64c00/ffffff?text=E';">
+                        </div>
+                        <!-- Información del usuario -->
+                        <div class="flex flex-col">
+                            <span class="text-[7px] sm:text-[9px] text-yellow-400 tracking-wider font-bold">EMILIO</span>
+                            <span class="text-[5px] sm:text-[7px] text-orange-400">GUERRERO</span>
+                        </div>
+                    </div>
+                    <!-- Contenedor de Esferas del Dragón -->
+                    <div class="drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] flex items-center gap-1 mt-1 pl-1">
+                        ESFERAS: <span id="livesContainer" class="flex gap-1"></span>
+                    </div>
+                </div>
+
+                <!-- Lado Derecho: Puntuaciones -->
+                <div class="flex flex-col items-end gap-1.5 md:gap-2 text-right">
+                    <div class="drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">KI ACTUAL: <span id="currentScore" class="text-yellow-400">0</span></div>
+                    <div class="drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">RÉCORD: <span id="highScore" class="text-orange-500">0</span></div>
+                    
+                    <!-- Barra de Precisión (Accuracy) -->
+                    <div class="flex flex-col items-end mt-1 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                        <span class="text-[7px] sm:text-[9px] text-cyan-400 tracking-wider">ACCURACY: <span id="accuracyText" class="text-white">100%</span></span>
+                        <div class="w-20 h-2 sm:w-28 bg-gray-900 border border-cyan-500 rounded-sm overflow-hidden mt-0.5">
+                            <div id="accuracyBar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Recarga del Ataque de Ki Rojo (Cooldown) -->
+                    <div class="flex flex-col items-end mt-1 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                        <span class="text-[7px] sm:text-[9px] text-red-400 tracking-wider">ATAQUE KI: <span id="cooldownText" class="text-green-400">LISTO</span></span>
+                        <div class="w-20 h-2 sm:w-28 bg-gray-900 border border-red-500 rounded-sm overflow-hidden mt-0.5">
+                            <div id="cooldownBar" class="h-full bg-green-500 transition-all duration-75" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas de Renderizado de Alta Velocidad -->
+            <canvas id="gameCanvas" width="800" height="400" class="w-full h-auto block"></canvas>
+
+            <!-- Pantalla de Inicio / Selección de Personaje -->
+            <div id="startScreen" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-6 text-center z-20">
+                <h1 class="text-orange-500 text-xl sm:text-3xl md:text-4xl mb-4 tracking-widest animate-pulse drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                    GOKU RUNNER
+                </h1>
+                <p class="text-gray-400 text-[8px] sm:text-xs mb-8">ESQUIVA OBSTÁCULOS BAJO EL CIELO DE NAMEKUSEI</p>
+
+                <!-- Tarjetas de Personajes -->
+                <div class="flex gap-4 mb-8 w-full max-w-md justify-center">
+                    <!-- Goku Base -->
+                    <button id="charBase" onclick="selectCharacter('base')" class="flex-1 bg-orange-950/40 border-4 border-orange-500 hover:bg-orange-900/40 p-4 rounded-lg flex flex-col items-center transition-all group scale-105">
+                        <div class="w-12 h-12 mb-2 relative flex items-center justify-center overflow-hidden rounded bg-orange-950/40 border border-orange-500/20">
+                            <!-- Imagen de Goku Base personalizada -->
+                            <img src="https://i.postimg.cc/T3fvNfQp/CSVSPU2EJVE5TFHAXIKIPL37NQ.avif" alt="Goku Base" class="h-full object-contain scale-125 translate-y-0.5" onerror="this.onerror=null; this.src='https://placehold.co/48x48/e64c00/ffffff?text=BASE';">
+                        </div>
+                        <span class="text-[9px] sm:text-[10px] text-white">GOKU BASE</span>
+                        <span class="text-[7px] text-orange-400 mt-1">Velocidad estándar</span>
+                    </button>
+
+                    <!-- Goku SSJ -->
+                    <button id="charSsj" onclick="selectCharacter('ssj')" class="flex-1 bg-gray-900/40 border-4 border-gray-700 hover:bg-yellow-950/20 p-4 rounded-lg flex flex-col items-center transition-all group">
+                        <div class="w-12 h-12 mb-2 relative flex items-center justify-center overflow-hidden rounded bg-yellow-950/40 border border-yellow-500/20">
+                            <!-- Imagen de Goku Súper Saiyajin personalizada -->
+                            <img src="https://i.postimg.cc/YSMZRRrW/641-6415523-resultado-de-imagen-para-goku-ssj-goku-super.png" alt="Goku SSJ" class="h-full object-contain scale-125 translate-y-0.5" onerror="this.onerror=null; this.src='https://placehold.co/48x48/e64c00/ffffff?text=SSJ';">
+                        </div>
+                        <span class="text-[9px] sm:text-[10px] text-white">SÚPER SAIYAJIN</span>
+                        <span class="text-[7px] text-yellow-400 mt-1">¡Aura especial de Ki!</span>
+                    </button>
+                </div>
+
+                <button onclick="startGame()" class="btn-retro bg-orange-500 hover:bg-orange-400 text-white px-6 py-3 rounded text-sm sm:text-base border-2 border-black font-bold">
+                    ¡EMPEZAR A CORRER!
+                </button>
+            </div>
+
+            <!-- Pantalla de Game Over -->
+            <div id="gameOverScreen" class="absolute inset-0 bg-black/85 hidden flex-col items-center justify-center p-6 text-center z-20">
+                <h2 class="text-red-600 text-2xl sm:text-4xl mb-2 tracking-wider animate-bounce">¡FIN DE JUEGO!</h2>
+                <p class="text-gray-400 text-[10px] mb-6">HAS SIDO DERROTADO POR EL KI DEL RIVAL</p>
+                
+                <div class="bg-gray-950 border-2 border-gray-800 p-4 rounded mb-6 w-full max-w-xs">
+                    <p class="text-[9px] text-gray-500 mb-1">PUNTUACIÓN OBTENIDA</p>
+                    <p class="text-yellow-400 text-lg mb-4" id="finalScore">0 KI</p>
+                    <p class="text-[9px] text-gray-500 mb-1">MÁXIMO PODER ALCANZADO</p>
+                    <p class="text-orange-500 text-sm" id="finalHighScore">0 KI</p>
+                </div>
+
+                <button onclick="resetGame()" class="btn-retro bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-3 rounded text-xs sm:text-sm border-2 border-black font-bold">
+                    RECOLECTAR ENERGÍA (REINTENTAR)
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Panel de Controles inferior -->
+        <div class="w-full mt-4 flex flex-col md:flex-row justify-between items-center gap-4 px-2">
+            <div class="text-[8px] sm:text-[9px] text-gray-500 text-center md:text-left leading-relaxed flex-1">
+                <span class="text-yellow-500 font-bold">TECLADO:</span><br>
+                • <span class="text-orange-400">SALTAR:</span> W, FLECHA ARRIBA (¡Giro mortal 360°!)<br>
+                • <span class="text-red-400">ATACAR:</span> ESPACIO (Destruye Kamehamehas y enemigos aéreos - Cooldown 6s)<br>
+                • <span class="text-blue-400">DESLIZARSE:</span> S, FLECHA ABAJO (Mantener pulsado)
+            </div>
+            
+            <!-- Botones de acción táctiles duales/triples exclusivos para móviles -->
+            <div class="flex gap-2 w-full md:w-auto md:hidden">
+                <!-- Botón de salto -->
+                <button id="jumpTouchBtn" class="btn-retro flex-1 bg-orange-600 active:bg-orange-500 text-white py-4 px-2 rounded-lg border-2 border-black font-bold text-[9px] sm:text-xs flex justify-center items-center gap-1 select-none">
+                    <span>⚡</span> SALTOS
+                </button>
+                <!-- Botón de ataque -->
+                <button id="attackTouchBtn" class="btn-retro flex-1 bg-red-600 active:bg-red-500 text-white py-4 px-2 rounded-lg border-2 border-black font-bold text-[9px] sm:text-xs flex justify-center items-center gap-1 select-none">
+                    <span>☄️</span> ATACAR
+                </button>
+                <!-- Botón de deslizamiento -->
+                <button id="slideTouchBtn" class="btn-retro flex-1 bg-blue-600 active:bg-blue-500 text-white py-4 px-2 rounded-lg border-2 border-black font-bold text-[9px] sm:text-xs flex justify-center items-center gap-1 select-none">
+                    <span>⬇️</span> DESLIZAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('currentScore');
+        const highScoreElement = document.getElementById('highScore');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalHighScoreElement = document.getElementById('finalHighScore');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const muteBtn = document.getElementById('muteBtn');
+
+        // Configuración y Variables de Estado
+        let gameSpeed = 6.5;
+        let score = 0;
+        let isGameOver = false;
+        let isGameStarted = false;
+        let obstacles = [];
+        let particles = [];
+        let projectiles = []; // Proyectiles de Ki disparados por Goku
+        let stars = [];
+        let spawnTimer = 0;
+        let attackCooldown = 0; // Temporizador para el cooldown de ataque (en frames: 360 frames = 6 seg a 60 FPS)
+        let selectedCharacter = 'base'; // 'base' o 'ssj'
+        let bgScrollX = 0;
+        let mountainScrollX = 0;
+        let cloudsScrollX = 0;
+        let isMuted = false;
+        let slideKeyPressed = false; // Control de pulsación continua de deslizamiento
+        let lives = 3;
+        let isInvincible = false;
+        let invincibilityTimer = 0;
+
+        // Variables para el control de precisión (Accuracy)
+        let totalShots = 0;
+        let successfulHits = 0;
+
+        const groundY = 330;
+
+        // Recuperar récord de localStorage
+        let savedHighScore = localStorage.getItem('goku_high_score') || 0;
+        highScoreElement.textContent = savedHighScore;
+
+        // Inicializar estrellas para la noche
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < 35; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * (groundY - 140),
+                    size: Math.random() * 2 + 1,
+                    alpha: Math.random()
+                });
+            }
+        }
+        initStars();
+
+        // --- SISTEMA DE AUDIO RETRO (SINTETIZADO) ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'jump') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(750, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'slide') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'levelUp') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now); 
+                osc.frequency.setValueAtTime(554.37, now + 0.08); 
+                osc.frequency.setValueAtTime(659.25, now + 0.16); 
+                osc.frequency.setValueAtTime(880, now + 0.24); 
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.5);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'shoot') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(580, now);
+                osc.frequency.exponentialRampToValueAtTime(90, now + 0.18);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            muteBtn.textContent = isMuted ? '🔇 MUTED' : '🔊 SONIDO';
+            muteBtn.classList.toggle('bg-red-950', isMuted);
+            muteBtn.classList.toggle('border-red-600', isMuted);
+        }
+
+        // Actualizar visualmente la barra de vidas con estrellas (Esferas del dragón)
+        function updateLivesUI() {
+            const livesContainer = document.getElementById('livesContainer');
+            let livesHtml = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    // Esfera activa dorada
+                    livesHtml += '<span class="text-yellow-400 text-[10px] sm:text-xs">⭐</span>';
+                } else {
+                    // Esfera desactivada gris
+                    livesHtml += '<span class="text-gray-600 opacity-30 text-[10px] sm:text-xs">⭐</span>';
+                }
+            }
+            livesContainer.innerHTML = livesHtml;
+        }
+
+        // Actualizar visualmente la barra y porcentaje de precisión (Accuracy)
+        function updateAccuracyUI() {
+            const accuracyText = document.getElementById('accuracyText');
+            const accuracyBar = document.getElementById('accuracyBar');
+            
+            if (totalShots === 0) {
+                accuracyText.textContent = "100%";
+                accuracyBar.style.width = "100%";
+                return;
+            }
+            
+            // Fórmula: (Aciertos * 100) / Total
+            const accuracy = Math.round((successfulHits * 100) / totalShots);
+            accuracyText.textContent = accuracy + "%";
+            accuracyBar.style.width = accuracy + "%";
+        }
+
+        // Actualizar visualmente la barra de recarga (Cooldown de 6 segundos)
+        function updateCooldownUI() {
+            const cooldownText = document.getElementById('cooldownText');
+            const cooldownBar = document.getElementById('cooldownBar');
+            const attackTouchBtn = document.getElementById('attackTouchBtn');
+
+            if (attackCooldown <= 0) {
+                cooldownText.textContent = "LISTO";
+                cooldownText.className = "text-green-400";
+                cooldownBar.style.width = "100%";
+                cooldownBar.className = "h-full bg-green-500 transition-all duration-75";
+                
+                if (attackTouchBtn) {
+                    attackTouchBtn.classList.remove('opacity-40');
+                }
+            } else {
+                // Cálculo de porcentaje basado en 360 frames totales (6 segundos)
+                const percent = Math.max(0, Math.min(100, ((360 - attackCooldown) / 360) * 100));
+                const secondsRemaining = (attackCooldown / 60).toFixed(1);
+                
+                cooldownText.textContent = `${secondsRemaining}s`;
+                cooldownText.className = "text-red-400";
+                cooldownBar.style.width = `${percent}%`;
+                cooldownBar.className = "h-full bg-red-600 transition-all duration-75";
+                
+                if (attackTouchBtn) {
+                    attackTouchBtn.classList.add('opacity-40');
+                }
+            }
+        }
+
+        // --- STREAMING_CHUNK:Defining Goku entity actions, physics and animations... ---
+        // --- ENTIDAD GOKU (Salto Único con Giro Mortal, Deslizamiento) ---
+        const goku = {
+            x: 80,
+            y: groundY - 48,
+            width: 36,
+            height: 48,
+            vy: 0,
+            gravity: 0.65,
+            jumpForce: -13.5,
+            isGrounded: true,
+            jumpsLeft: 1, // Limitar a un solo salto
+            isSliding: false,
+            frame: 0,
+            dustTimer: 0,
+            rotation: 0, // Control del ángulo de giro
+            
+            update() {
+                this.frame++;
+
+                // Reducir temporizador de invencibilidad si está activo
+                if (isInvincible) {
+                    invincibilityTimer--;
+                    if (invincibilityTimer <= 0) {
+                        isInvincible = false;
+                    }
+                }
+
+                if (this.isSliding) {
+                    this.vy = 0; 
+                    this.y = groundY - this.height; 
+                    this.rotation = 0;
+
+                    if (!isGameOver) {
+                        this.dustTimer++;
+                        if (this.dustTimer % 4 === 0) {
+                            createDust(this.x + 10, groundY - 2);
+                        }
+                    }
+                } else {
+                    this.vy += this.gravity;
+                    this.y += this.vy;
+
+                    // Colisión con el suelo
+                    if (this.y >= groundY - this.height) {
+                        this.y = groundY - this.height;
+                        this.vy = 0;
+                        this.isGrounded = true;
+                        this.jumpsLeft = 1; // Restablecer salto
+                        this.rotation = 0;  // Restablecer ángulo
+                    } else {
+                        this.isGrounded = false;
+                        // Ejecutar rotación mortal en el aire
+                        this.rotation += 0.16; // Velocidad del giro hacia adelante
+                    }
+
+                    // Polvo normal al correr
+                    if (this.isGrounded && !isGameOver) {
+                        this.dustTimer++;
+                        if (this.dustTimer % 8 === 0) {
+                            createDust(this.x + 5, groundY - 2);
+                        }
+                    }
+                }
+
+                // Partículas de aura si es SSJ
+                if (selectedCharacter === 'ssj' && !isGameOver) {
+                    createKiAura(this.x + this.width / 2, this.y + this.height / 2);
+                }
+            },
+
+            jump() {
+                if (this.isSliding) {
+                    this.cancelSlide();
+                }
+
+                if (this.jumpsLeft > 0) {
+                    this.vy = this.jumpForce;
+                    this.jumpsLeft--;
+                    this.isGrounded = false;
+                    playSound('jump');
+                    createKiBlast(this.x + this.width / 2, this.y + this.height);
+                }
+            },
+
+            slide() {
+                if (this.isGrounded && !this.isSliding) {
+                    this.isSliding = true;
+                    this.height = 24; // Reducir hitbox a la mitad
+                    this.y = groundY - this.height;
+                    playSound('slide');
+                }
+            },
+
+            cancelSlide() {
+                if (this.isSliding) {
+                    this.isSliding = false;
+                    this.height = 48; // Restaurar tamaño normal
+                    this.y = groundY - this.height;
+                }
+            },
+
+            draw() {
+                if (isInvincible && Math.floor(this.frame / 4) % 2 === 0) {
+                    return; // Saltarse el frame para el efecto de parpadeo retro
+                }
+
+                ctx.save();
+                
+                const isSSJ = selectedCharacter === 'ssj';
+                const hairColor = isSSJ ? '#FFE000' : '#000000';
+                const giColor = '#E64C00'; 
+                const undershirtColor = '#004CD6';
+
+                // --- TRASLACIÓN PARA EL GIRO MORTAL (Si está saltando) ---
+                const isJumping = !this.isGrounded && !this.isSliding;
+                if (isJumping) {
+                    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                    ctx.rotate(this.rotation);
+                    ctx.translate(-(this.x + this.width / 2), -(this.y + this.height / 2));
+                }
+
+                // --- SPRITE SI GOKU SE ESTÁ DESLIZANDO ---
+                if (this.isSliding) {
+                    // Sombra baja al deslizarse
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                    ctx.beginPath();
+                    ctx.ellipse(this.x + this.width / 2, groundY, 22, 3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (isSSJ) {
+                        let pulse = Math.sin(this.frame * 0.5) * 5;
+                        ctx.fillStyle = 'rgba(255, 230, 0, 0.18)';
+                        ctx.beginPath();
+                        ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, 28 + pulse, 15 + pulse, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Cabeza y rostro deslizando
+                    ctx.fillStyle = '#FFCCA3';
+                    ctx.fillRect(this.x + 22, this.y + 2, 14, 12);
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(this.x + 29, this.y + 5, 5, 3);
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(this.x + 31, this.y + 5, 2, 3);
+                    ctx.fillStyle = hairColor; 
+                    ctx.fillRect(this.x + 28, this.y + 3, 7, 2);
+
+                    // Pelo impulsado hacia atrás
+                    ctx.fillStyle = hairColor;
+                    ctx.fillRect(this.x + 10, this.y, 14, 10);
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 10, this.y + 2);
+                    ctx.lineTo(this.x - 2, this.y + 4);
+                    ctx.lineTo(this.x + 8, this.y + 8);
+                    ctx.lineTo(this.x + 2, this.y - 2);
+                    ctx.lineTo(this.x + 12, this.y + 3);
+                    ctx.fill();
+
+                    // Traje naranja y camiseta
+                    ctx.fillStyle = giColor;
+                    ctx.fillRect(this.x + 8, this.y + 10, 18, 10);
+                    ctx.fillStyle = undershirtColor;
+                    ctx.fillRect(this.x + 12, this.y + 10, 6, 4);
+                    ctx.fillRect(this.x + 6, this.y + 12, 4, 4);
+
+                    // Piernas replegadas
+                    ctx.fillStyle = giColor;
+                    ctx.fillRect(this.x, this.y + 14, 12, 10);
+                    ctx.fillStyle = '#002BB0';
+                    ctx.fillRect(this.x - 4, this.y + 16, 6, 6);
+
+                    ctx.restore();
+                    return;
+                }
+
+                // --- SPRITE NORMAL (CORRIENDO/SALTANDO CON GIRO) ---
+                let bobbing = (this.isGrounded) ? Math.sin(this.frame * 0.25) * 2 : 0;
+                
+                // Sombra en el suelo
+                const distToGround = groundY - (this.y + this.height);
+                if (distToGround < 100 && !isJumping) {
+                    const shadowOpacity = Math.max(0.1, 0.4 - distToGround / 200);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${shadowOpacity})`;
+                    ctx.beginPath();
+                    ctx.ellipse(this.x + this.width / 2, groundY, 18 * (1 - distToGround / 150), 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Aura Súper Saiyajin
+                if (isSSJ) {
+                    let pulse = Math.sin(this.frame * 0.4) * 4;
+                    ctx.fillStyle = 'rgba(255, 230, 0, 0.15)';
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.width / 2, this.y + this.height / 2 + bobbing, 30 + pulse, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Zapatillas
+                ctx.fillStyle = '#002BB0';
+                ctx.fillRect(this.x + 4, this.y + this.height - 6 + bobbing, 10, 6);
+                ctx.fillRect(this.x + this.width - 14, this.y + this.height - 6 + bobbing, 10, 6);
+
+                // Traje Naranja
+                ctx.fillStyle = giColor;
+                ctx.fillRect(this.x + 6, this.y + 22 + bobbing, this.width - 12, 20); 
+                ctx.fillRect(this.x + 4, this.y + 14 + bobbing, this.width - 8, 10); 
+
+                // Cinturón
+                ctx.fillStyle = undershirtColor;
+                ctx.fillRect(this.x + 5, this.y + 24 + bobbing, this.width - 10, 4);
+
+                // Muñequeras
+                ctx.fillRect(this.x + 1, this.y + 18 + bobbing, 4, 4);
+                ctx.fillRect(this.x + this.width - 5, this.y + 18 + bobbing, 4, 4);
+
+                // Cuello azul
+                ctx.fillRect(this.x + 12, this.y + 14 + bobbing, 12, 3);
+
+                // Cara
+                ctx.fillStyle = '#FFCCA3';
+                ctx.fillRect(this.x + 10, this.y + 4 + bobbing, 16, 12); 
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(this.x + 19, this.y + 8 + bobbing, 5, 3);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(this.x + 21, this.y + 8 + bobbing, 2, 3);
+
+                // Ceja
+                ctx.fillStyle = hairColor;
+                ctx.fillRect(this.x + 17, this.y + 6 + bobbing, 8, 2);
+
+                // Pelo Spiky
+                ctx.fillStyle = hairColor;
+                ctx.fillRect(this.x + 6, this.y - 4 + bobbing, 22, 10);
+                
+                ctx.beginPath();
+                ctx.moveTo(this.x + 10, this.y + 4 + bobbing);
+                ctx.lineTo(this.x + 2, this.y - 6 + bobbing);
+                ctx.lineTo(this.x + 14, this.y + bobbing);
+                
+                ctx.lineTo(this.x + 16, this.y - 12 + bobbing);
+                ctx.lineTo(this.x + 22, this.y - 2 + bobbing);
+
+                ctx.lineTo(this.x + 28, this.y - 10 + bobbing);
+                ctx.lineTo(this.x + 28, this.y + 3 + bobbing);
+
+                ctx.lineTo(this.x + 34, this.y - 2 + bobbing);
+                ctx.lineTo(this.x + 26, this.y + 8 + bobbing);
+                ctx.fill();
+
+                // Cola de mono si está en modo Base
+                if (!isSSJ) {
+                    ctx.strokeStyle = '#5E2F0D';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 6, this.y + 28 + bobbing);
+                    ctx.quadraticCurveTo(this.x - 12, this.y + 20 + bobbing, this.x - 4, this.y + 10 + bobbing);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        };
+
+        // --- STREAMING_CHUNK:Crafting obstacle models and interactive rival designs... ---
+        // --- SISTEMA DE DISEÑO DE OBSTÁCULOS E INTERCALACIÓN ---
+        const OBSTACLE_DESIGNS = {
+            roca: {
+                width: 28,
+                height: 28,
+                draw(ctx, x, y, frame) {
+                    ctx.fillStyle = '#3a2f2c';
+                    ctx.fillRect(x + 2, y + 2, 26, 26);
+                    ctx.fillStyle = '#8c7365';
+                    ctx.fillRect(x, y, 24, 24);
+                    ctx.fillStyle = '#bf9f8f';
+                    ctx.fillRect(x, y, 12, 6);
+                    ctx.fillRect(x, y + 6, 6, 6);
+                }
+            },
+            kamehameha: {
+                width: 65,
+                height: 20,
+                draw(ctx, x, y, frame) {
+                    let scale = Math.sin(frame * 0.5) * 4;
+                    ctx.fillStyle = 'rgba(0, 204, 255, 0.8)';
+                    ctx.fillRect(x, y - scale/2, 65, 20 + scale);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(x + 6, y + 4 - scale/4, 53, 12 + scale/2);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y + 10, 15 + scale/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(0, 204, 255, 0.4)';
+                    ctx.beginPath();
+                    ctx.arc(x, y + 10, 22 + scale/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            superior: {
+                width: 45,
+                height: 42,
+                draw(ctx, x, y, frame, character) {
+                    let hover = Math.sin(frame * 0.25) * 2;
+                    
+                    ctx.save();
+                    
+                    switch (character) {
+                        case 'freezer':
+                            // --- FREEZER ---
+                            ctx.fillStyle = '#E5E5E5'; // Cuerpo
+                            ctx.fillRect(x + 10, y + 8 + hover, 24, 18); 
+                            ctx.fillStyle = '#A020F0'; // Detalles morados
+                            ctx.fillRect(x + 16, y + 10 + hover, 12, 6); 
+                            ctx.fillRect(x + 15, y - 4 + hover, 14, 6); 
+                            ctx.fillStyle = '#E5E5E5'; // Cabeza
+                            ctx.fillRect(x + 13, y + hover, 18, 10);
+                            ctx.fillStyle = '#A020F0'; // Hombros
+                            ctx.fillRect(x + 11, y + 2 + hover, 2, 4); 
+                            ctx.fillRect(x + 31, y + 2 + hover, 2, 4);
+                            ctx.fillStyle = '#A020F0'; // Patada extendida
+                            ctx.fillRect(x - 12, y + 18 + hover, 22, 8);
+                            ctx.fillStyle = '#E5E5E5'; 
+                            ctx.fillRect(x + 5, y + 14 + hover, 12, 8);
+                            break;
+
+                        case 'piccolo':
+                            // --- PICCOLO (Piel verde, traje morado, turbante/capa blanca) ---
+                            ctx.fillStyle = '#FFFFFF'; // Capa hombros
+                            ctx.fillRect(x + 6, y + 6 + hover, 32, 8);
+                            ctx.fillStyle = '#4B0082'; // Traje morado
+                            ctx.fillRect(x + 10, y + 14 + hover, 24, 16);
+                            ctx.fillStyle = '#00FF00'; // Brazos verdes con rayas rojas
+                            ctx.fillRect(x - 6, y + 16 + hover, 16, 6);
+                            ctx.fillStyle = '#FF0000'; 
+                            ctx.fillRect(x - 2, y + 17 + hover, 4, 4);
+                            ctx.fillStyle = '#00FF00'; // Cabeza verde
+                            ctx.fillRect(x + 15, y - 2 + hover, 14, 10);
+                            ctx.fillStyle = '#FFFFFF'; // Turbante blanco
+                            ctx.fillRect(x + 13, y - 8 + hover, 18, 6);
+                            ctx.fillStyle = '#FF0000'; // Cinturón rojo
+                            ctx.fillRect(x + 9, y + 24 + hover, 26, 4);
+                            break;
+
+                        case 'vegeta':
+                            // --- VEGETA (Traje azul, armadura saiyajin clásica, pelo spiky) ---
+                            ctx.fillStyle = '#0000FF'; // Traje azul base
+                            ctx.fillRect(x + 12, y + 16 + hover, 20, 16);
+                            ctx.fillStyle = '#FFFFFF'; // Armadura blanca torso
+                            ctx.fillRect(x + 10, y + 8 + hover, 24, 12);
+                            ctx.fillStyle = '#FFD700'; // Hombreras doradas de armadura
+                            ctx.fillRect(x + 6, y + 8 + hover, 6, 6);
+                            ctx.fillRect(x + 32, y + 8 + hover, 6, 6);
+                            ctx.fillStyle = '#FFCCA3'; // Cara
+                            ctx.fillRect(x + 14, y + hover, 16, 10);
+                            ctx.fillStyle = '#000000'; // Pelo negro spiky clásico
+                            ctx.fillRect(x + 11, y - 10 + hover, 22, 11);
+                            // Ráfaga Galick Gun delantera
+                            ctx.fillStyle = '#FF00FF';
+                            ctx.fillRect(x - 10, y + 12 + hover, 16, 10);
+                            break;
+
+                        case 'majin_buu':
+                            // --- MAJIN BUU (Rosa chicle, pantalones blancos, capa/chaleco) ---
+                            ctx.fillStyle = '#FFC0CB'; // Cuerpo rosa
+                            ctx.fillRect(x + 6, y + 10 + hover, 32, 22);
+                            ctx.fillStyle = '#FFFFFF'; // Pantalones blancos grandes
+                            ctx.fillRect(x + 8, y + 22 + hover, 28, 12);
+                            ctx.fillStyle = '#000000'; // Chaleco negro
+                            ctx.fillRect(x + 4, y + 10 + hover, 6, 12);
+                            ctx.fillRect(x + 34, y + 10 + hover, 6, 12);
+                            ctx.fillStyle = '#FFC0CB'; // Cabeza con antena
+                            ctx.fillRect(x + 14, y + hover, 16, 11);
+                            ctx.fillRect(x + 20, y - 8 + hover, 4, 8); // Antena buu
+                            ctx.fillStyle = '#FFFF00'; // Guantes amarillos lanzando golpe
+                            ctx.fillRect(x - 8, y + 12 + hover, 12, 8);
+                            break;
+
+                        case 'gohan':
+                            // --- GOHAN SSJ (Traje morado de Piccolo, pelo dorado spiky) ---
+                            ctx.fillStyle = '#4B0082'; // Gi Morado
+                            ctx.fillRect(x + 10, y + 10 + hover, 24, 22);
+                            ctx.fillStyle = '#0000FF'; // Fajín azul
+                            ctx.fillRect(x + 8, y + 22 + hover, 28, 4);
+                            ctx.fillStyle = '#FFCCA3'; // Cara
+                            ctx.fillRect(x + 14, y + hover, 16, 11);
+                            ctx.fillStyle = '#FFD700'; // Pelo Súper Saiyajin dorado picudo
+                            ctx.fillRect(x + 10, y - 11 + hover, 24, 12);
+                            ctx.fillStyle = '#FFCCA3'; // Brazo adelante
+                            ctx.fillRect(x - 8, y + 12 + hover, 18, 6);
+                            ctx.fillStyle = '#0000FF'; // Muñequera azul
+                            ctx.fillRect(x - 10, y + 12 + hover, 4, 6);
+                            break;
+                    }
+
+                    ctx.restore();
+                }
+            }
+        };
+
+        // --- CLASE PROYECTIL (ESFERA DE ATAQUE ROJO) ---
+        class RedBlast {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 24;
+                this.height = 24;
+                this.speed = 11;
+            }
+            update() {
+                this.x += this.speed;
+                createRedTrail(this.x, this.y + this.height / 2);
+            }
+            draw() {
+                ctx.save();
+                let glow = Math.sin(Date.now() * 0.05) * 4;
+                
+                // Brillo translúcido exterior rojo
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.45)';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, 16 + glow, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Esfera sólida roja
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Núcleo brillante amarillo/blanco
+                ctx.fillStyle = '#FFFFCC';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- STREAMING_CHUNK:Creating particle engine and beautiful explosions... ---
+        // --- SISTEMA DE PARTÍCULAS ---
+        class Particle {
+            constructor(x, y, vx, vy, color, size, life, type = 'square') {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.size = size;
+                this.maxLife = life;
+                this.life = life;
+                this.type = type;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color;
+                if (this.type === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                }
+                ctx.restore();
+            }
+        }
+
+        function createDust(x, y) {
+            particles.push(new Particle(
+                x, y, 
+                -Math.random() * 2 - 1.5, -Math.random() * 1.5, 
+                'rgba(180, 110, 60, 0.65)', 
+                Math.random() * 4 + 3, 22
+            ));
+        }
+
+        function createKiBlast(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push(new Particle(
+                    x + (Math.random() - 0.5) * 15, y,
+                    (Math.random() - 0.5) * 4, Math.random() * 5 + 2,
+                    'rgba(255, 255, 255, 0.85)',
+                    Math.random() * 5 + 3, 20, 'circle'
+                ));
+            }
+        }
+
+        function createKiAura(x, y) {
+            particles.push(new Particle(
+                x + (Math.random() - 0.5) * 35, y + 10,
+                (Math.random() - 0.5) * 1, -Math.random() * 3 - 2,
+                `hsla(${Math.random() * 15 + 45}, 100%, 50%, 0.75)`, 
+                Math.random() * 6 + 2, 25, 'circle'
+            ));
+        }
+
+        function createTrail(x, y) {
+            particles.push(new Particle(
+                x + 5, y + 10 + (Math.random() - 0.5) * 8,
+                Math.random() * 1 + 1, (Math.random() - 0.5) * 2,
+                'rgba(0, 204, 255, 0.4)',
+                Math.random() * 8 + 4, 15, 'circle'
+            ));
+        }
+
+        function createRedTrail(x, y) {
+            particles.push(new Particle(
+                x, y + (Math.random() - 0.5) * 8,
+                -Math.random() * 2 - 1, (Math.random() - 0.5) * 2,
+                `hsl(${Math.random() * 15}, 100%, 50%)`, // Rango de tonos rojos y naranjas encendidos
+                Math.random() * 6 + 3, 14, 'circle'
+            ));
+        }
+
+        function createExplosion(x, y) {
+            playSound('hit');
+            for (let i = 0; i < 40; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 7 + 3;
+                particles.push(new Particle(
+                    x, y,
+                    Math.cos(angle) * speed, Math.sin(angle) * speed,
+                    i % 2 === 0 ? '#FFE000' : '#FF5500',
+                    Math.random() * 6 + 3, 40
+                ));
+            }
+        }
+
+        function createMiniExplosion(x, y) {
+            playSound('hit');
+            for (let i = 0; i < 10; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 3 + 1;
+                particles.push(new Particle(
+                    x, y,
+                    Math.cos(angle) * speed, Math.sin(angle) * speed,
+                    '#FF3300',
+                    Math.random() * 4 + 2, 15
+                ));
+            }
+        }
+
+        // --- STREAMING_CHUNK:Rendering day/night parallax backgrounds and levels... ---
+        // --- SISTEMA PARALLAX CON CICLO DE DÍA Y NOCHE (CADA 500 KI) ---
+        function drawParallaxBackground() {
+            // El ciclo cambia cada 500 de score
+            const isNight = Math.floor(score / 500) % 2 === 1;
+
+            // 1. Degradado del cielo
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (!isNight) {
+                // CIELO DE DÍA (Namekusei Atardecer/Día Cálido)
+                skyGrad.addColorStop(0, '#121c4b'); 
+                skyGrad.addColorStop(0.5, '#7b2243'); 
+                skyGrad.addColorStop(0.8, '#d46d23'); 
+                skyGrad.addColorStop(1, '#ffaf53'); 
+            } else {
+                // CIELO DE NOCHE (Espacio Profundo)
+                skyGrad.addColorStop(0, '#02000d'); 
+                skyGrad.addColorStop(0.5, '#0a0521'); 
+                skyGrad.addColorStop(0.8, '#1b0a33'); 
+                skyGrad.addColorStop(1, '#2c0e44'); 
+            }
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Astro celestial (Sol de Día, Luna de Noche)
+            if (!isNight) {
+                // Sol brillante
+                ctx.fillStyle = 'rgba(255, 235, 160, 0.45)';
+                ctx.beginPath();
+                ctx.arc(600, 120, 85, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Luna con anillo de luz mística
+                ctx.fillStyle = 'rgba(210, 235, 255, 0.55)';
+                ctx.beginPath();
+                ctx.arc(600, 120, 60, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Efecto de sombra para hacer luna crescent
+                ctx.fillStyle = '#0a0521';
+                ctx.beginPath();
+                ctx.arc(582, 110, 58, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Dibujar y animar estrellas parpadeantes en la noche
+                ctx.fillStyle = '#ffffff';
+                stars.forEach(star => {
+                    star.alpha += (Math.random() - 0.5) * 0.15;
+                    star.alpha = Math.max(0.1, Math.min(1, star.alpha));
+                    ctx.save();
+                    ctx.globalAlpha = star.alpha;
+                    ctx.fillRect(star.x, star.y, star.size, star.size);
+                    ctx.restore();
+                });
+            }
+
+            // 3. Nubes flotantes
+            cloudsScrollX -= 0.15;
+            if (cloudsScrollX <= -canvas.width) cloudsScrollX = 0;
+            ctx.fillStyle = !isNight ? 'rgba(255, 255, 255, 0.06)' : 'rgba(150, 120, 200, 0.05)';
+            
+            for (let offset = 0; offset <= canvas.width; offset += canvas.width) {
+                let x = cloudsScrollX + offset;
+                ctx.fillRect(x + 50, 40, 120, 24);
+                ctx.fillRect(x + 200, 70, 90, 18);
+                ctx.fillRect(x + 450, 30, 150, 30);
+                ctx.fillRect(x + 650, 60, 100, 20);
+            }
+
+            // 4. Montañas del fondo
+            mountainScrollX -= 0.6;
+            if (mountainScrollX <= -canvas.width) mountainScrollX = 0;
+            ctx.fillStyle = !isNight ? '#4c2132' : '#0e0618'; // Más oscuras de noche
+            
+            for (let offset = 0; offset <= canvas.width; offset += canvas.width) {
+                let x = mountainScrollX + offset;
+                ctx.beginPath();
+                ctx.moveTo(x + 0, groundY);
+                ctx.lineTo(x + 90, 170);
+                ctx.lineTo(x + 180, groundY);
+                ctx.lineTo(x + 280, 140);
+                ctx.lineTo(x + 410, groundY);
+                ctx.lineTo(x + 560, 210);
+                ctx.lineTo(x + 680, groundY);
+                ctx.lineTo(x + 750, 160);
+                ctx.lineTo(x + canvas.width, groundY);
+                ctx.fill();
+            }
+
+            // 5. Suelo arcilloso
+            ctx.fillStyle = !isNight ? '#A34200' : '#4d1c00'; 
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+            // Borde superior del suelo
+            ctx.fillStyle = !isNight ? '#6E2A00' : '#2b0b00';
+            ctx.fillRect(0, groundY, canvas.width, 10);
+            ctx.fillStyle = !isNight ? '#FFE0B0' : '#aa7755'; 
+            ctx.fillRect(0, groundY, canvas.width, 2);
+
+            // Texturas del suelo en movimiento
+            bgScrollX -= gameSpeed;
+            if (bgScrollX <= -canvas.width) bgScrollX = 0;
+            ctx.fillStyle = !isNight ? '#511E00' : '#1e0700';
+            for (let offset = 0; offset <= canvas.width; offset += canvas.width) {
+                let x = bgScrollX + offset;
+                ctx.fillRect(x + 40, groundY + 30, 100, 3);
+                ctx.fillRect(x + 240, groundY + 15, 60, 3);
+                ctx.fillRect(x + 400, groundY + 45, 120, 3);
+                ctx.fillRect(x + 620, groundY + 25, 80, 3);
+            }
+        }
+
+        // --- GENERACIÓN DE OBSTÁCULOS CON ROTACIÓN DE RIVALES ---
+        function spawnObstacle() {
+            // ALTURAS AJUSTADAS:
+            // 1. Roca (Baja): OBLIGATORIO SALTAR.
+            // 2. Kamehameha (Media): Se puede saltar o deslizarse.
+            // 3. Superior (Alta): OBLIGATORIO DESLIZARSE. Intercala rivales: Freezer, Piccolo, Vegeta, Buu, Gohan.
+            const list = [
+                { type: 'roca', y: groundY - OBSTACLE_DESIGNS.roca.height },
+                { type: 'kamehameha', y: groundY - 58 },
+                { type: 'superior', y: groundY - 82 } // Zona superior
+            ];
+
+            const chosen = list[Math.floor(Math.random() * list.length)];
+            let designWidth = 0;
+            let designHeight = 0;
+            let characterSelection = '';
+
+            if (chosen.type === 'superior') {
+                designWidth = OBSTACLE_DESIGNS.superior.width;
+                designHeight = OBSTACLE_DESIGNS.superior.height;
+                
+                // Rotar aleatoriamente entre los 5 personajes rivales
+                const characterPool = ['freezer', 'piccolo', 'vegeta', 'majin_buu', 'gohan'];
+                characterSelection = characterPool[Math.floor(Math.random() * characterPool.length)];
+            } else {
+                designWidth = OBSTACLE_DESIGNS[chosen.type].width;
+                designHeight = OBSTACLE_DESIGNS[chosen.type].height;
+            }
+
+            obstacles.push({
+                x: canvas.width + 15,
+                y: chosen.y,
+                width: designWidth,
+                height: designHeight,
+                type: chosen.type,
+                character: characterSelection,
+                frame: 0
+            });
+        }
+
+        function checkCollision(rect1, rect2) {
+            // Hitbox ajustada para que las colisiones sean muy precisas con el pixel-art
+            const marginX = 6;
+            const marginY = 4;
+            return rect1.x + marginX < rect2.x + rect2.width &&
+                   rect1.x + rect1.width - marginX > rect2.x &&
+                   rect1.y + marginY < rect2.y + rect2.height &&
+                   rect1.y + rect1.height - marginY > rect2.y;
+        }
+
+        // --- STREAMING_CHUNK:Handling game loop, attacks, cooldown counters and collisions... ---
+        // --- LOOP PRINCIPAL DEL JUEGO ---
+        function loop() {
+            if (isGameOver || !isGameStarted) return;
+
+            drawParallaxBackground();
+
+            goku.update();
+            goku.draw();
+
+            // Disminuir temporizador de cooldown de disparo (6 segundos de recarga)
+            if (attackCooldown > 0) {
+                attackCooldown--;
+                updateCooldownUI();
+            }
+
+            // Actualizar partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Actualizar Proyectiles de Ki Rojo y evaluar sus colisiones con los obstáculos
+            for (let p = projectiles.length - 1; p >= 0; p--) {
+                let proj = projectiles[p];
+                proj.update();
+                proj.draw();
+
+                let projHit = false;
+
+                // Verificar impacto de esfera de ataque contra obstáculos
+                for (let o = obstacles.length - 1; o >= 0; o--) {
+                    let obs = obstacles[o];
+                    if (checkCollision(proj, obs)) {
+                        projHit = true;
+                        
+                        // DESTRUIR Kamehameha o Rival Superior (Media y Alta Altura)
+                        if (obs.type === 'kamehameha' || obs.type === 'superior') {
+                            createExplosion(obs.x + obs.width / 2, obs.y + obs.height / 2);
+                            obstacles.splice(o, 1);
+                            score += 15; // ¡Dar puntos de Ki extras por destruirlo!
+                            scoreElement.textContent = score;
+                        } else if (obs.type === 'roca') {
+                            // Si golpea una roca, explota la esfera pero la roca no se destruye (Sigue el desafío)
+                            createMiniExplosion(proj.x + proj.width, proj.y + proj.height / 2);
+                        }
+                        
+                        // Incrementa el registro de impactos y actualiza el HUD
+                        successfulHits++;
+                        updateAccuracyUI();
+                        
+                        projectiles.splice(p, 1);
+                        break;
+                    }
+                }
+
+                // Eliminar proyectiles fuera del lienzo
+                if (!projHit && proj.x > canvas.width) {
+                    projectiles.splice(p, 1);
+                }
+            }
+
+            // Ratio de spawn dinámico según la velocidad
+            spawnTimer++;
+            let currentSpawnRate = Math.max(45, 95 - gameSpeed * 3);
+            if (spawnTimer > currentSpawnRate) {
+                spawnObstacle();
+                spawnTimer = 0;
+            }
+
+            // Gestionar obstáculos y colisiones contra Goku
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+                obs.frame++;
+
+                // Efecto de estela para el ataque Kamehameha
+                if (obs.type === 'kamehameha') {
+                    createTrail(obs.x + obs.width, obs.y);
+                }
+
+                // Dibujar el diseño correcto
+                if (obs.type === 'superior') {
+                    OBSTACLE_DESIGNS.superior.draw(ctx, obs.x, obs.y, obs.frame, obs.character);
+                } else {
+                    OBSTACLE_DESIGNS[obs.type].draw(ctx, obs.x, obs.y, obs.frame);
+                }
+
+                // Comprobar colisión si no es invencible
+                if (!isInvincible && checkCollision(goku, obs)) {
+                    lives--;
+                    updateLivesUI();
+                    createExplosion(goku.x + goku.width / 2, goku.y + goku.height / 2);
+
+                    if (lives <= 0) {
+                        triggerGameOver();
+                        return;
+                    } else {
+                        // Activar estado invencible temporal, limpiar obstáculos actuales de la pantalla
+                        isInvincible = true;
+                        invincibilityTimer = 95; // ~1.5 segundos de protección
+                        obstacles = []; // Limpiar para dar un respiro justo
+                        projectiles = [];
+                        playSound('hit');
+                        break; // Salir de este bucle para volver a renderizar con seguridad
+                    }
+                }
+
+                // Superar obstáculo con éxito (si cruza el extremo izquierdo)
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    scoreElement.textContent = score;
+
+                    // Incrementar velocidad y reproducir sonido cada 50 puntos
+                    if (score > 0 && score % 50 === 0) {
+                        gameSpeed += 0.6;
+                        playSound('levelUp');
+                    }
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- SISTEMA DE INICIO Y RESET ---
+        function selectCharacter(type) {
+            selectedCharacter = type;
+            document.getElementById('charBase').className = `flex-1 ${type === 'base' ? 'bg-orange-950/40 border-orange-500 scale-105' : 'bg-gray-900/40 border-gray-700'} border-4 p-4 rounded-lg flex flex-col items-center transition-all`;
+            document.getElementById('charSsj').className = `flex-1 ${type === 'ssj' ? 'bg-yellow-950/40 border-yellow-500 scale-105' : 'bg-gray-900/40 border-gray-700'} border-4 p-4 rounded-lg flex flex-col items-center transition-all`;
+            playSound('jump');
+        }
+
+        function startGame() {
+            initAudio();
+            isGameStarted = true;
+            startScreen.classList.add('hidden');
+            resetGame();
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            createExplosion(goku.x + goku.width / 2, goku.y + goku.height / 2);
+            
+            if (score > savedHighScore) {
+                savedHighScore = score;
+                localStorage.setItem('goku_high_score', savedHighScore);
+                highScoreElement.textContent = savedHighScore;
+            }
+
+            finalScoreElement.textContent = `${score} KI`;
+            finalHighScoreElement.textContent = `${savedHighScore} KI`;
+            gameOverScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('flex');
+        }
+
+        function resetGame() {
+            obstacles = [];
+            particles = [];
+            projectiles = [];
+            score = 0;
+            gameSpeed = 6.5;
+            spawnTimer = 0;
+            attackCooldown = 0;
+            isGameOver = false;
+            slideKeyPressed = false;
+            
+            // Restablecer estadísticas de precisión
+            totalShots = 0;
+            successfulHits = 0;
+            updateAccuracyUI();
+            updateCooldownUI();
+            
+            // Restablecer Vidas, Invencibilidad y HUD
+            lives = 3;
+            isInvincible = false;
+            invincibilityTimer = 0;
+            updateLivesUI();
+            
+            // Restablecer Goku
+            goku.isSliding = false;
+            goku.height = 48;
+            goku.y = groundY - goku.height;
+            goku.vy = 0;
+            goku.jumpsLeft = 1;
+            goku.rotation = 0;
+            
+            scoreElement.textContent = score;
+            gameOverScreen.classList.remove('flex');
+            gameOverScreen.classList.add('hidden');
+            
+            drawParallaxBackground();
+            goku.draw();
+
+            loop();
+        }
+
+        // --- STREAMING_CHUNK:Setting up inputs, mobile controls and launch sequences... ---
+        // --- MANEJADORES DE CONTROLES ---
+        function triggerJump() {
+            if (isGameStarted && !isGameOver) {
+                goku.jump();
+            }
+        }
+
+        function triggerSlide() {
+            if (isGameStarted && !isGameOver) {
+                goku.slide();
+            }
+        }
+
+        function triggerAttack() {
+            if (isGameStarted && !isGameOver && attackCooldown === 0) {
+                // Elevamos significativamente la altura de salida del proyectil (más arriba de la cabeza si está de pie)
+                // para que intercepte con total facilidad los obstáculos de media y alta altura.
+                let shootY = goku.isSliding ? (goku.y - 5) : (goku.y - 18);
+                
+                projectiles.push(new RedBlast(goku.x + goku.width, shootY));
+                playSound('shoot');
+                attackCooldown = 360; // 360 frames = 6 segundos de cooldown exactos a 60 FPS
+                
+                // Incrementa el conteo de disparos totales realizados y actualiza el HUD
+                totalShots++;
+                updateAccuracyUI();
+                updateCooldownUI();
+            }
+        }
+
+        // Controladores de Teclado (Saltar con W/Arriba | Atacar con Espacio | Deslizar continuo con S/Abajo)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+                triggerJump();
+                e.preventDefault(); 
+            }
+            if (e.code === 'Space') {
+                triggerAttack();
+                e.preventDefault();
+            }
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                if (!slideKeyPressed) {
+                    slideKeyPressed = true;
+                    triggerSlide();
+                }
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                slideKeyPressed = false;
+                if (isGameStarted && !isGameOver) {
+                    goku.cancelSlide();
+                }
+                e.preventDefault();
+            }
+        });
+
+        // Configuración para pantallas táctiles móviles
+        const jumpTouchBtn = document.getElementById('jumpTouchBtn');
+        const slideTouchBtn = document.getElementById('slideTouchBtn');
+        const attackTouchBtn = document.getElementById('attackTouchBtn');
+
+        // Acciones de Salto Táctil
+        jumpTouchBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            triggerJump();
+        });
+        jumpTouchBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            triggerJump();
+        });
+
+        // Acciones de Ataque Táctil
+        attackTouchBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            triggerAttack();
+        });
+        attackTouchBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            triggerAttack();
+        });
+
+        // Deslizamiento continuo en interfaz táctil
+        slideTouchBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            triggerSlide();
+        });
+        slideTouchBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            goku.cancelSlide();
+        });
+
+        slideTouchBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            triggerSlide();
+        });
+        slideTouchBtn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            goku.cancelSlide();
+        });
+        slideTouchBtn.addEventListener('mouseleave', (e) => {
+            e.preventDefault();
+            goku.cancelSlide();
+        });
+
+        // Primer render de carga
+        drawParallaxBackground();
+        goku.draw();
+    </script>
+</body>
+</html>
